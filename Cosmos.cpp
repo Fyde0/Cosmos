@@ -24,6 +24,11 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
 
   stepTime++;
 
+  int8_t lastKeyPressed = hw.GetLastKeyPressed();
+  if (lastKeyPressed > -1) {
+    seq1.ToggleStep(lastKeyPressed);
+  }
+
   for (size_t i = 0; i < size; i++) {
 
     if (clock.Process()) {
@@ -41,14 +46,14 @@ int main(void) {
 
   clock.Init(2, hw.Field().AudioSampleRate());
   seq1.Init(8);
-  seq1.ToggleStep(0);
-  hw.ToggleKeyLed(0);
 
   // main loop iterations
   uint8_t mainCount = 0;
   while (1) {
     // count main loop iterations
     ++mainCount;
+
+    hw.ProcessControls();
 
     // only update screen every x iterations
     if (mainCount % DISPLAY_UPDATE_DELAY == 0) {

@@ -54,6 +54,11 @@ public:
     blinking_ = true;
   }
 
+  /**
+   * Processes and applies current status of LEDs
+   *
+   * @param stepTime current step time to calculate blinking time
+   */
   void ProcessLeds(uint32_t stepTime) {
     if (stepTime >= blinkingTime_ and blinking_) {
       for (size_t i = 0; i < 16; i++) {
@@ -75,11 +80,45 @@ public:
     }
   }
 
+  /**
+   * CONTROLS
+   */
+
+  void ProcessControls() {
+    field_.ProcessAllControls();
+    for (size_t i = 0; i < 16; i++) {
+      if (field_.KeyboardRisingEdge(i)) {
+        // debounce
+        currentTime_ = System::GetNow();
+        if (currentTime_ - lastDebounceTime_ >= debounceDelay_) {
+          keyPressed_ = i;
+          ToggleKeyLed(i);
+        }
+        lastDebounceTime_ = currentTime_;
+      }
+    }
+  }
+
+  int8_t GetLastKeyPressed() {
+    int8_t key = keyPressed_;
+    keyPressed_ = -1;
+    return key;
+  }
+
   // getter for passthrough
   daisy::DaisyField &Field() { return field_; }
 
 private:
   DaisyField field_;
+
+  /**
+   * Keys
+   */
+
+  uint32_t currentTime_;
+  uint32_t lastDebounceTime_;
+  uint8_t debounceDelay_ = 32;
+  int8_t keyPressed_ = -1;
 
   /**
    * LEDs
