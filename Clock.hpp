@@ -31,6 +31,8 @@ public:
     return false;
   };
 
+  float GetBpm() { return freq_ * 60.f; }
+
   void SetFreq(float freq) {
     freq_ = freq;
     phaseIncr_ = calcPhaseIncr();

@@ -24,6 +24,13 @@ public:
   void ClearDisplay() { field_.display.Fill(false); }
   void UpdateDisplay() { field_.display.Update(); }
 
+  void PrintBPM(float bpm, uint8_t x, uint8_t y) {
+    FixedCapStr<10> bpmStr("BPM:");
+    bpmStr.AppendFloat(bpm);
+    field_.display.SetCursor(x, y);
+    field_.display.WriteString(bpmStr, Font_6x8, true);
+  }
+
   /**
    * Prints the CPU usage on screen
    *

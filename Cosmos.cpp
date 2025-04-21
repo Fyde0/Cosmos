@@ -152,11 +152,18 @@ int main(void) {
 
     // knobs
     for (size_t i = 0; i < 8; i++) {
+      // do stuff only if the knob was moved
       if (hw.DidKnobChange(i)) {
         // change notes if shift is pressed
         if (shift) {
           // notes are from 0 to 87, see Quantizer class
           pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
+        } else {
+          switch (i) {
+          case 0:
+            // knob 1, bpm (from 20 to 220)
+            clock.SetFreq(hw.ScaleKnob(i, 20, 220) / 60.f);
+          }
         }
       }
     }
@@ -170,8 +177,9 @@ int main(void) {
 
       hw.ClearDisplay();
 
-      hw.PrintShift(shift, 0, 56);
+      hw.PrintBPM(clock.GetBpm(), 0, 0);
       hw.PrintCPU(cpuUsage, 86, 0);
+      hw.PrintShift(shift, 0, 56);
 
       // FixedCapStr<8> step("Step:");
       // step.AppendInt(seq1.GetCurrentStep());
