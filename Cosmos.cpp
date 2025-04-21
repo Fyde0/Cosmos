@@ -30,8 +30,9 @@ bool play = false;
 
 // audio
 float out1, out2;
-
+// for CPU %
 float cpuUsage = 0.f;
+// count step time for blinking LEDs
 uint16_t stepTime = 0;
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
                    size_t size) {
@@ -101,6 +102,8 @@ int main(void) {
   osc.SetMode(Oscillator::MODE_TRI);
   env1.Init(hw.Field().AudioSampleRate());
 
+  // shift button
+  bool shift = false;
   // main loop iterations
   uint8_t mainCount = 0;
   while (1) {
@@ -113,7 +116,7 @@ int main(void) {
 
     hw.ProcessAllControls();
 
-    // Keys
+    // keys
     for (size_t i = 0; i < 16; ++i) {
       if (hw.KeyboardRisingEdge(i)) {
         if (hw.GetKeyGroup(i) == 'A') {
@@ -126,8 +129,8 @@ int main(void) {
       }
     }
 
-    // Switches
-    // Switch 1, Play/Pause
+    // switches
+    // switch 1, play/pause
     if (hw.SwitchRisingEdge(1)) {
       if (play) {
         play = !play; // stop
@@ -144,12 +147,17 @@ int main(void) {
         play = !play;
       }
     }
+    // switch 2, shift
+    shift = hw.SwitchPressed(2);
 
-    // Knobs
+    // knobs
     for (size_t i = 0; i < 8; i++) {
       if (hw.DidKnobChange(i)) {
-        // notes are from 0 to 87, see Quantizer class
-        pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
+        // change notes if shift is pressed
+        if (shift) {
+          // notes are from 0 to 87, see Quantizer class
+          pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
+        }
       }
     }
 
@@ -162,6 +170,7 @@ int main(void) {
 
       hw.ClearDisplay();
 
+      hw.PrintShift(shift, 0, 56);
       hw.PrintCPU(cpuUsage, 86, 0);
 
       // FixedCapStr<8> step("Step:");

@@ -39,6 +39,14 @@ public:
     field_.display.WriteString(cpu, Font_6x8, true);
   }
 
+  void PrintShift(bool shift, uint8_t x, uint8_t y) {
+    if (shift) {
+      FixedCapStr<5> shift("Shift");
+      field_.display.SetCursor(x, y);
+      field_.display.WriteString(shift, Font_6x8, true);
+    }
+  }
+
   /**
    * LEDs
    */
@@ -128,6 +136,14 @@ public:
       return field_.GetSwitch(DaisyField::SW_1)->RisingEdge();
     } else {
       return field_.GetSwitch(DaisyField::SW_2)->RisingEdge();
+    }
+  }
+
+  bool SwitchPressed(uint8_t i) {
+    if (i == 1) {
+      return field_.GetSwitch(DaisyField::SW_1)->Pressed();
+    } else {
+      return field_.GetSwitch(DaisyField::SW_2)->Pressed();
     }
   }
 
