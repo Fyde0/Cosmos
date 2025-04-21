@@ -15,37 +15,43 @@ Clock clock;
 Sequencer seq1;
 Sequencer seq2;
 
+// play/pause
+bool play = false;
+
 /**
  * AUDIO CALLBACK
  */
 
 float cpuUsage = 0.f;
-uint32_t stepTime = 0;
+uint16_t stepTime = 0;
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
                    size_t size) {
 
   // for CPU %
   uint32_t start = System::GetTick();
 
-  stepTime++;
+  if (play) {
 
-  for (size_t i = 0; i < size; i++) {
+    stepTime++;
 
-    if (clock.Process()) {
+    for (size_t i = 0; i < size; i++) {
 
-      // sequencers
-      seq1.Advance();
-      seq2.Advance();
-      // seq2 resets seq1
-      if (seq2.IsCurrentStepActive()) {
-        seq1.SetCurrentStep(0);
+      if (clock.Process()) {
+
+        // sequencers
+        seq1.Advance();
+        seq2.Advance();
+        // seq2 resets seq1
+        if (seq2.IsCurrentStepActive()) {
+          seq1.SetCurrentStep(0);
+        }
+        // seq1 = group A = 7 to 15, makes no sense
+        hw.BlinkKeyLed(seq1.GetCurrentStep() + 8);
+        hw.BlinkKeyLed(seq2.GetCurrentStep());
+
+        // start step
+        stepTime = 0;
       }
-      // seq1 = group A = 7 to 15, makes no sense
-      hw.BlinkKeyLed(seq1.GetCurrentStep() + 8);
-      hw.BlinkKeyLed(seq2.GetCurrentStep());
-
-      // start step
-      stepTime = 0;
     }
   }
 
@@ -77,6 +83,7 @@ int main(void) {
 
     hw.ProcessAllControls();
 
+    // Keys
     for (size_t i = 0; i < 16; ++i) {
       if (hw.KeyboardRisingEdge(i)) {
         if (hw.GetKeyGroup(i) == 'A') {
@@ -89,20 +96,40 @@ int main(void) {
       }
     }
 
+    // Switches
+    // Switch 1, Play/Pause
+    if (hw.SwitchRisingEdge(1)) {
+      if (play) {
+        // stop
+        play = !play;
+      } else {
+        // play
+        // reset all seqs
+        // sequencer advances before step is processed,
+        // so you need to set it to the last step when starting
+        seq1.SetCurrentStep(7);
+        seq2.SetCurrentStep(7);
+        // set phase to end so that you don't have to wait for the next tick
+        clock.SetPhaseToEnd();
+        stepTime = 0;
+        play = !play;
+      }
+    }
+
     // only update screen every x iterations
     if (mainCount % DISPLAY_UPDATE_DELAY == 0) {
 
       hw.ClearDisplay();
 
-      hw.PrintCPU(cpuUsage, 0, 0);
+      hw.PrintCPU(cpuUsage, 86, 0);
 
-      FixedCapStr<8> step("Step:");
-      step.AppendInt(seq1.GetCurrentStep());
-      hw.Field().display.SetCursor(0, 10);
-      hw.Field().display.WriteString(step, Font_6x8, true);
+      // FixedCapStr<8> step("Step:");
+      // step.AppendInt(seq1.GetCurrentStep());
+      // hw.Field().display.SetCursor(0, 10);
+      // hw.Field().display.WriteString(step, Font_6x8, true);
 
-      // FixedCapStr<16> time("???:");
-      // time.AppendInt(mainCount);
+      // FixedCapStr<32> time("???:");
+      // time.AppendInt(stepTime);
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(time, Font_6x8, true);
 

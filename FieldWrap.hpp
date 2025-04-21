@@ -86,7 +86,7 @@ public:
 
   void ProcessAllControls() { field_.ProcessAllControls(); }
 
-  bool KeyboardRisingEdge(size_t i) {
+  bool KeyboardRisingEdge(uint8_t i) {
     if (field_.KeyboardRisingEdge(i)) {
       currentTime_ = System::GetNow();
       if (currentTime_ - lastDebounceTime_ >= debounceDelay_) {
@@ -102,6 +102,14 @@ public:
       return 'A';
     }
     return 'B';
+  }
+
+  bool SwitchRisingEdge(uint8_t i) {
+    if (i == 1) {
+      return field_.GetSwitch(DaisyField::SW_1)->RisingEdge();
+    } else {
+      return field_.GetSwitch(DaisyField::SW_2)->RisingEdge();
+    }
   }
 
   // getter for passthrough
