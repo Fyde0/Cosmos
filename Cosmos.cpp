@@ -2,7 +2,8 @@
 #include "Envelope.hpp"
 #include "FieldWrap.hpp"
 #include "Oscillator.hpp"
-#include "Sequencer.hpp"
+#include "PitchSequencer.hpp"
+#include "TriggerSequencer.hpp"
 #include "daisy_field.h"
 
 #define MAIN_DELAY 5 // ms, main loop iteration time (separate from audio)
@@ -14,8 +15,9 @@ using namespace daisy;
 FieldWrap hw;
 
 Clock clock;
-Sequencer seq1;
-Sequencer seq2;
+TriggerSequencer seq1;
+TriggerSequencer seq2;
+PitchSequencer pitchSeq;
 Oscillator osc;
 Envelope env1;
 
@@ -45,6 +47,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
         // sequencers
         seq1.Advance();
         seq2.Advance();
+        pitchSeq.Advance();
         // seq2 resets seq1
         if (seq2.IsCurrentStepActive()) {
           seq1.SetCurrentStep(0);
@@ -52,6 +55,9 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
         // seq1 = group A = 7 to 15, makes no sense
         hw.BlinkKeyLed(seq1.GetCurrentStep() + 8);
         hw.BlinkKeyLed(seq2.GetCurrentStep());
+
+        // set oscillator frequency
+        osc.SetFreq(pitchSeq.GetCurrentPitch());
 
         // start step
         stepTime = 0;
@@ -92,6 +98,7 @@ int main(void) {
   clock.Init(2, hw.Field().AudioSampleRate());
   seq1.Init(8);
   seq2.Init(8);
+  pitchSeq.Init(8);
   osc.Init(hw.Field().AudioSampleRate());
   osc.SetMode(Oscillator::MODE_SIN);
   env1.Init(hw.Field().AudioSampleRate());
@@ -132,12 +139,17 @@ int main(void) {
         // so you need to set it to the last step when starting
         seq1.SetCurrentStep(7);
         seq2.SetCurrentStep(7);
+        pitchSeq.SetCurrentStep(7);
         // set phase to end so that you don't have to wait for the next tick
         clock.SetPhaseToEnd();
         stepTime = 0;
         play = !play;
       }
     }
+
+    /**
+     * UI
+     */
 
     // only update screen every x iterations
     if (mainCount % DISPLAY_UPDATE_DELAY == 0) {
@@ -151,8 +163,8 @@ int main(void) {
       // hw.Field().display.SetCursor(0, 10);
       // hw.Field().display.WriteString(step, Font_6x8, true);
 
-      // FixedCapStr<32> time("???:");
-      // time.AppendInt(stepTime);
+      // FixedCapStr<32> time("");
+      // time.AppendFloat(pitchSeq.GetCurrentPitch());
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(time, Font_6x8, true);
 

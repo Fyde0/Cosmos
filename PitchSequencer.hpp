@@ -2,15 +2,15 @@
 
 #include <vector>
 
-class Sequencer {
+class PitchSequencer {
 public:
-  Sequencer() {}
-  ~Sequencer() {}
+  PitchSequencer() {}
+  ~PitchSequencer() {}
 
   void Init(uint8_t steps) {
     steps_ = steps;
     currentStep_ = 0;
-    sequence_.resize(steps_, false);
+    sequence_.resize(steps_, 440.f);
   }
 
   void Advance() {
@@ -20,15 +20,14 @@ public:
     }
   }
 
-  void ToggleStep(uint8_t step) { sequence_[step] = !sequence_[step]; }
-
   void SetCurrentStep(uint8_t step) { currentStep_ = step; }
+  void SetPitch(uint8_t step, float pitch) { sequence_[step] = pitch; }
 
   uint8_t GetCurrentStep() const { return currentStep_; }
-  bool IsCurrentStepActive() const { return sequence_[currentStep_]; }
+  float GetCurrentPitch() const { return sequence_[currentStep_]; }
 
 private:
   uint8_t steps_;
   uint8_t currentStep_;
-  std::vector<bool> sequence_;
+  std::vector<float> sequence_;
 };

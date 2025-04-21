@@ -49,7 +49,9 @@ public:
       *out2 = *out1;
       break;
       // c++ sinf uses a bunch more CPU
-      // out_ = sinf(phase_ * TWOPI_F); break;
+      // *out1 = sinf(phase_ * TWOPI_F);
+      // *out2 = *out1;
+      // break;
 
     case MODE_TRI:
       *out1 = (2.0f * phase_) - 1.0f;
