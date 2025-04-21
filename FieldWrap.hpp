@@ -84,25 +84,24 @@ public:
    * CONTROLS
    */
 
-  void ProcessControls() {
-    field_.ProcessAllControls();
-    for (size_t i = 0; i < 16; i++) {
-      if (field_.KeyboardRisingEdge(i)) {
-        // debounce
-        currentTime_ = System::GetNow();
-        if (currentTime_ - lastDebounceTime_ >= debounceDelay_) {
-          keyPressed_ = i;
-          ToggleKeyLed(i);
-        }
+  void ProcessAllControls() { field_.ProcessAllControls(); }
+
+  bool KeyboardRisingEdge(size_t i) {
+    if (field_.KeyboardRisingEdge(i)) {
+      currentTime_ = System::GetNow();
+      if (currentTime_ - lastDebounceTime_ >= debounceDelay_) {
         lastDebounceTime_ = currentTime_;
+        return true;
       }
     }
+    return false;
   }
 
-  int8_t GetLastKeyPressed() {
-    int8_t key = keyPressed_;
-    keyPressed_ = -1;
-    return key;
+  char GetKeyGroup(uint8_t key) {
+    if (key >= 8 and key <= 15) {
+      return 'A';
+    }
+    return 'B';
   }
 
   // getter for passthrough
@@ -118,7 +117,6 @@ private:
   uint32_t currentTime_;
   uint32_t lastDebounceTime_;
   uint8_t debounceDelay_ = 32;
-  int8_t keyPressed_ = -1;
 
   /**
    * LEDs

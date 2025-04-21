@@ -22,6 +22,8 @@ public:
 
   void ToggleStep(uint8_t step) { sequence_[step] = !sequence_[step]; }
 
+  void SetCurrentStep(uint8_t step) { currentStep_ = step; }
+
   uint8_t GetCurrentStep() const { return currentStep_; }
   bool IsCurrentStepActive() const { return sequence_[currentStep_]; }
 

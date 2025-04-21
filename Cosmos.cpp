@@ -13,6 +13,11 @@ FieldWrap hw;
 
 Clock clock;
 Sequencer seq1;
+Sequencer seq2;
+
+/**
+ * AUDIO CALLBACK
+ */
 
 float cpuUsage = 0.f;
 uint32_t stepTime = 0;
@@ -24,16 +29,22 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
 
   stepTime++;
 
-  int8_t lastKeyPressed = hw.GetLastKeyPressed();
-  if (lastKeyPressed > -1) {
-    seq1.ToggleStep(lastKeyPressed);
-  }
-
   for (size_t i = 0; i < size; i++) {
 
     if (clock.Process()) {
+
+      // sequencers
       seq1.Advance();
-      hw.BlinkKeyLed(seq1.GetCurrentStep());
+      seq2.Advance();
+      // seq2 resets seq1
+      if (seq2.IsCurrentStepActive()) {
+        seq1.SetCurrentStep(0);
+      }
+      // seq1 = group A = 7 to 15, makes no sense
+      hw.BlinkKeyLed(seq1.GetCurrentStep() + 8);
+      hw.BlinkKeyLed(seq2.GetCurrentStep());
+
+      // start step
       stepTime = 0;
     }
   }
@@ -41,11 +52,18 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
   cpuUsage += 0.03f * (((System::GetTick() - start) / 200.f) - cpuUsage);
 }
 
+/**
+ * MAIN
+ */
+
 int main(void) {
+
+  // Init stuff
   hw.Init(AudioCallback);
 
   clock.Init(2, hw.Field().AudioSampleRate());
   seq1.Init(8);
+  seq2.Init(8);
 
   // main loop iterations
   uint8_t mainCount = 0;
@@ -53,7 +71,23 @@ int main(void) {
     // count main loop iterations
     ++mainCount;
 
-    hw.ProcessControls();
+    /**
+     * CONTROLS
+     */
+
+    hw.ProcessAllControls();
+
+    for (size_t i = 0; i < 16; ++i) {
+      if (hw.KeyboardRisingEdge(i)) {
+        if (hw.GetKeyGroup(i) == 'A') {
+          seq1.ToggleStep(i - 8);
+        }
+        if (hw.GetKeyGroup(i) == 'B') {
+          seq2.ToggleStep(i);
+        }
+        hw.ToggleKeyLed(i);
+      }
+    }
 
     // only update screen every x iterations
     if (mainCount % DISPLAY_UPDATE_DELAY == 0) {
@@ -71,6 +105,12 @@ int main(void) {
       // time.AppendInt(mainCount);
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(time, Font_6x8, true);
+
+      // hw.Field().display.SetCursor(0, 20);
+      // hw.Field().display.WriteString(seq1.GetSequenceString(), Font_6x8,
+      // true); hw.Field().display.SetCursor(0, 30);
+      // hw.Field().display.WriteString(seq2.GetSequenceString(), Font_6x8,
+      // true);
 
       hw.UpdateDisplay();
     }
