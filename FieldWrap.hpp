@@ -84,7 +84,24 @@ public:
    * CONTROLS
    */
 
-  void ProcessAllControls() { field_.ProcessAllControls(); }
+  void ProcessAllControls() {
+    field_.ProcessAllControls();
+    // process knobs, check for tolerance
+    for (size_t i = 0; i < 8; i++) {
+      float tempKnobValue = field_.knob[i].Process();
+      if (tempKnobValue < 0.0f) {
+        tempKnobValue = 0.0f;
+      }
+      if (fabsf(tempKnobValue - knobValues_[i]) > knobTolerance_) {
+        knobValues_[i] = tempKnobValue;
+        knobChanged_[i] = true;
+        return;
+      }
+      knobChanged_[i] = false;
+    }
+  }
+
+  // keys
 
   bool KeyboardRisingEdge(uint8_t i) {
     if (field_.KeyboardRisingEdge(i)) {
@@ -104,6 +121,8 @@ public:
     return 'B';
   }
 
+  // switches
+
   bool SwitchRisingEdge(uint8_t i) {
     if (i == 1) {
       return field_.GetSwitch(DaisyField::SW_1)->RisingEdge();
@@ -112,19 +131,28 @@ public:
     }
   }
 
+  // knobs
+
+  float ScaleKnob(int i, float minOutput, float maxOutput) {
+    return (((knobValues_[i] - minKnob_) / (maxKnob_ - minKnob_)) *
+            (maxOutput - minOutput)) +
+           minOutput;
+  }
+
+  bool DidKnobChange(uint8_t i) { return knobChanged_[i]; }
+  float GetKnobValue(uint8_t i) { return knobValues_[i]; }
+  float GetKnobValueInHertz(uint8_t i) {
+    // notes from 21 to 108 (A0 to C8)
+    uint8_t note = static_cast<int>(ScaleKnob(i, 21, 108));
+    // 440 * 2^((note - 69)/12)
+    return 440.0f * pow(2.0, (static_cast<float>(note) - 69.0) / 12.0);
+  }
+
   // getter for passthrough
   daisy::DaisyField &Field() { return field_; }
 
 private:
   DaisyField field_;
-
-  /**
-   * Keys
-   */
-
-  uint32_t currentTime_;
-  uint32_t lastDebounceTime_;
-  uint8_t debounceDelay_ = 32;
 
   /**
    * LEDs
@@ -145,4 +173,19 @@ private:
   // how long to blink LEDs for, in AudioCallback iterations
   uint8_t blinkingTime_ = 100;
   bool blinking_ = false;
+
+  /**
+   * CONTROLS
+   */
+
+  // keys
+  uint32_t currentTime_;
+  uint32_t lastDebounceTime_;
+  uint8_t debounceDelay_ = 32;
+  // knobs
+  const float knobTolerance_ = 0.001f;
+  const float minKnob_ = 0.000396f;
+  const float maxKnob_ = 0.968734f;
+  float knobValues_[8];
+  bool knobChanged_[8];
 };

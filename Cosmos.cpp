@@ -147,6 +147,13 @@ int main(void) {
       }
     }
 
+    // Knobs
+    for (size_t i = 0; i < 8; i++) {
+      if (hw.DidKnobChange(i)) {
+        pitchSeq.SetPitch(i, hw.GetKnobValueInHertz(i));
+      }
+    }
+
     /**
      * UI
      */
@@ -163,10 +170,10 @@ int main(void) {
       // hw.Field().display.SetCursor(0, 10);
       // hw.Field().display.WriteString(step, Font_6x8, true);
 
-      // FixedCapStr<32> time("");
-      // time.AppendFloat(pitchSeq.GetCurrentPitch());
+      // FixedCapStr<32> var("");
+      // var.AppendFloat(hw.GetKnobValue(0));
       // hw.Field().display.SetCursor(0, 20);
-      // hw.Field().display.WriteString(time, Font_6x8, true);
+      // hw.Field().display.WriteString(var, Font_6x8, true);
 
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(seq1.GetSequenceString(), Font_6x8,
