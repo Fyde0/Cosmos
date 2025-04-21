@@ -40,6 +40,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
   uint32_t start = System::GetTick();
 
   for (size_t i = 0; i < size; i++) {
+
     if (play) {
 
       if (clock.Process()) {
@@ -56,29 +57,25 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
         hw.BlinkKeyLed(seq1.GetCurrentStep() + 8);
         hw.BlinkKeyLed(seq2.GetCurrentStep());
 
-        // set oscillator frequency
-        osc.SetFreq(pitchSeq.GetCurrentPitch());
-
         // start step
         stepTime = 0;
 
         if (seq1.IsCurrentStepActive()) {
           env1.Trigger();
+          // set oscillator frequency
+          osc.SetFreq(pitchSeq.GetCurrentPitch());
         }
       }
-
-      osc.SetAmp(env1.Process());
-      osc.Process(&out1, &out2);
-
-      out2 = out1;
-
-      out[0][i] = out1;
-      out[1][i] = out2;
-
-    } else {
-      out[0][i] = 0.f;
-      out[1][i] = 0.f;
     }
+
+    float envOut = env1.Process();
+    osc.SetAmp(envOut);
+    osc.Process(&out1, &out2);
+
+    out2 = out1;
+
+    out[0][i] = out1;
+    out[1][i] = out2;
   }
 
   stepTime++;
@@ -100,7 +97,7 @@ int main(void) {
   seq2.Init(8);
   pitchSeq.Init(8);
   osc.Init(hw.Field().AudioSampleRate());
-  osc.SetMode(Oscillator::MODE_SIN);
+  osc.SetMode(Oscillator::MODE_TRI);
   env1.Init(hw.Field().AudioSampleRate());
 
   // main loop iterations

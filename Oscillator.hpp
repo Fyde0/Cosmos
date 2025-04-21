@@ -24,17 +24,17 @@ public:
     calcSineVars();
   }
 
-  inline void SetFreq(float f) {
+  void SetFreq(float f) {
     freq_ = f;
     calcPhaseInc();
     calcSineVars();
   }
 
-  inline void SetAmp(float a) { amp_ = a; }
+  void SetAmp(float a) { amp_ = a; }
 
-  inline void SetParam(uint8_t param, float value) { params_[param] = value; }
+  void SetParam(uint8_t param, float value) { params_[param] = value; }
 
-  inline void SetMode(uint8_t mode) {
+  void SetMode(uint8_t mode) {
     // check if mode number is not outside the list
     mode_ = mode < MODE_LAST ? mode : MODE_SIN;
   }
@@ -43,13 +43,15 @@ public:
     switch (mode_) {
 
     case MODE_SIN:
-      *out1 = b1 * y1 - y2;
-      y2 = y1;
-      y1 = *out1;
+      // c++ sinf in not efficient but handles the phase automatically
+      // this is temporary
+      *out1 = sinf(phase_ * TWOPI_F);
       *out2 = *out1;
       break;
-      // c++ sinf uses a bunch more CPU
-      // *out1 = sinf(phase_ * TWOPI_F);
+      // more efficient but doesn't handle phase and clicks
+      // *out1 = b1 * y1 - y2;
+      // y2 = y1;
+      // y1 = *out1;
       // *out2 = *out1;
       // break;
 
@@ -86,7 +88,7 @@ private:
   float sr_, freq_, amp_, phase_, phaseInc_;
   float params_[3];
 
-  inline void calcPhaseInc() { phaseInc_ = freq_ * (1.0f / sr_); }
+  void calcPhaseInc() { phaseInc_ = freq_ * (1.0f / sr_); }
 
   float w, y1, y2, b1;
   void calcSineVars() {
