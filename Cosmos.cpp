@@ -1,6 +1,7 @@
 #include "Clock.hpp"
 #include "Envelope.hpp"
 #include "FieldWrap.hpp"
+#include "Filter.hpp"
 #include "Oscillator.hpp"
 #include "PitchSequencer.hpp"
 #include "TriggerSequencer.hpp"
@@ -19,6 +20,7 @@ TriggerSequencer seq1;
 TriggerSequencer seq2;
 PitchSequencer pitchSeq;
 Oscillator osc;
+Filter filter;
 Envelope env1;
 
 // play/pause
@@ -73,8 +75,8 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
     float envOut = env1.Process();
     osc.SetAmp(envOut);
     osc.Process(&out1, &out2);
-
-    out2 = out1;
+    out1 = filter.Process(out1);
+    out2 = filter.Process(out2);
 
     out[0][i] = out1;
     out[1][i] = out2;
@@ -99,7 +101,8 @@ int main(void) {
   seq2.Init(8);
   pitchSeq.Init(8);
   osc.Init(hw.Field().AudioSampleRate());
-  osc.SetMode(Oscillator::MODE_TRI);
+  osc.SetMode(Oscillator::MODE_SAW);
+  filter.Init(hw.Field().AudioSampleRate());
   env1.Init(hw.Field().AudioSampleRate());
 
   // shift button
@@ -163,6 +166,18 @@ int main(void) {
           case 0:
             // knob 1, bpm (from 20 to 220)
             clock.SetFreq(hw.ScaleKnob(i, 20, 220) / 60.f);
+            break;
+          case 1:
+            // knob 2, osc mode?
+            break;
+          case 2:
+            // knob 3, filter frequency
+            filter.SetFreq(20.f * pow(1000.0f, hw.ScaleKnob(i, 0.0f, 1.0f)));
+            break;
+          case 3:
+            // knob 4, filter q
+            filter.SetQ(hw.ScaleKnob(i, 0.2f, 5.0f));
+            break;
           }
         }
       }
@@ -181,21 +196,10 @@ int main(void) {
       hw.PrintCPU(cpuUsage, 86, 0);
       hw.PrintShift(shift, 0, 56);
 
-      // FixedCapStr<8> step("Step:");
-      // step.AppendInt(seq1.GetCurrentStep());
-      // hw.Field().display.SetCursor(0, 10);
-      // hw.Field().display.WriteString(step, Font_6x8, true);
-
       // FixedCapStr<32> var("");
       // var.AppendFloat(hw.GetKnobValue(0));
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(var, Font_6x8, true);
-
-      // hw.Field().display.SetCursor(0, 20);
-      // hw.Field().display.WriteString(seq1.GetSequenceString(), Font_6x8,
-      // true); hw.Field().display.SetCursor(0, 30);
-      // hw.Field().display.WriteString(seq2.GetSequenceString(), Font_6x8,
-      // true);
 
       hw.UpdateDisplay();
     }
