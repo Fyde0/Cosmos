@@ -52,6 +52,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
         // seq2 resets seq1
         if (seq2.IsCurrentStepActive()) {
           seq1.SetCurrentStep(0);
+          pitchSeq.SetCurrentStep(0);
         }
         // seq1 = group A = 7 to 15, makes no sense
         hw.BlinkKeyLed(seq1.GetCurrentStep() + 8);
@@ -63,7 +64,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
         if (seq1.IsCurrentStepActive()) {
           env1.Trigger();
           // set oscillator frequency
-          osc.SetFreq(pitchSeq.GetCurrentPitch());
+          osc.SetFreq(pitchSeq.GetCurrentNoteHertz());
         }
       }
     }
@@ -147,7 +148,8 @@ int main(void) {
     // Knobs
     for (size_t i = 0; i < 8; i++) {
       if (hw.DidKnobChange(i)) {
-        pitchSeq.SetPitch(i, hw.GetKnobValueInHertz(i));
+        // notes are from 0 to 87, see Quantizer class
+        pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
       }
     }
 
