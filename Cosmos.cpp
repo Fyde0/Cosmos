@@ -1,5 +1,7 @@
 #include "Clock.hpp"
+#include "Envelope.hpp"
 #include "FieldWrap.hpp"
+#include "Oscillator.hpp"
 #include "Sequencer.hpp"
 #include "daisy_field.h"
 
@@ -14,6 +16,8 @@ FieldWrap hw;
 Clock clock;
 Sequencer seq1;
 Sequencer seq2;
+Oscillator osc;
+Envelope env1;
 
 // play/pause
 bool play = false;
@@ -21,6 +25,9 @@ bool play = false;
 /**
  * AUDIO CALLBACK
  */
+
+// audio
+float out1, out2;
 
 float cpuUsage = 0.f;
 uint16_t stepTime = 0;
@@ -30,11 +37,8 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
   // for CPU %
   uint32_t start = System::GetTick();
 
-  if (play) {
-
-    stepTime++;
-
-    for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
+    if (play) {
 
       if (clock.Process()) {
 
@@ -51,9 +55,27 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
 
         // start step
         stepTime = 0;
+
+        if (seq1.IsCurrentStepActive()) {
+          env1.Trigger();
+        }
       }
+
+      osc.SetAmp(env1.Process());
+      osc.Process(&out1, &out2);
+
+      out2 = out1;
+
+      out[0][i] = out1;
+      out[1][i] = out2;
+
+    } else {
+      out[0][i] = 0.f;
+      out[1][i] = 0.f;
     }
   }
+
+  stepTime++;
 
   cpuUsage += 0.03f * (((System::GetTick() - start) / 200.f) - cpuUsage);
 }
@@ -70,6 +92,9 @@ int main(void) {
   clock.Init(2, hw.Field().AudioSampleRate());
   seq1.Init(8);
   seq2.Init(8);
+  osc.Init(hw.Field().AudioSampleRate());
+  osc.SetMode(Oscillator::MODE_SIN);
+  env1.Init(hw.Field().AudioSampleRate());
 
   // main loop iterations
   uint8_t mainCount = 0;
@@ -100,10 +125,8 @@ int main(void) {
     // Switch 1, Play/Pause
     if (hw.SwitchRisingEdge(1)) {
       if (play) {
-        // stop
-        play = !play;
+        play = !play; // stop
       } else {
-        // play
         // reset all seqs
         // sequencer advances before step is processed,
         // so you need to set it to the last step when starting
