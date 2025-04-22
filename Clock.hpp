@@ -10,6 +10,7 @@ public:
 
   void Init(float freq, float sr) {
     freq_ = freq;
+    multIndex_ = 5; // x1
     mult_ = 1.0f;
     phase_ = 0.0f;
     sr_ = sr;
@@ -38,8 +39,13 @@ public:
     phaseIncr_ = calcPhaseIncr();
   };
 
-  void SetMult(float mult) {
-    mult_ = (int)round(mult);
+  void SetMult(uint8_t multIndex) {
+    // clamp
+    // value = (value < min) ? min : (value > max ? max : multIndex);
+    uint8_t maxValue = sizeof(mults_) / sizeof(mults_[0]) - 1; // array size
+    multIndex_ =
+        (multIndex < 0) ? 0 : (multIndex > maxValue ? maxValue : multIndex);
+    mult_ = mults_[multIndex_];
     phaseIncr_ = calcPhaseIncr();
   };
 
@@ -48,8 +54,18 @@ public:
    */
   void SetPhaseToEnd() { phase_ = TWOPI_F - phaseIncr_; };
 
+  /**
+   * Clock multiplier character for printing on screen
+   */
+  const char *GetMultChar() { return multChar_[multIndex_]; }
+
 private:
   float freq_, mult_, phase_, sr_, phaseIncr_;
+  uint8_t multIndex_;
+  float mults_[11] = {1.0f / 16, 1.0f / 8, 1.0f / 4, 1.0f / 3, 1.0f / 2, 1.0f,
+                      2.0f,      3.0f,     4.0f,     8.0f,     16.0f};
+  const char *multChar_[11] = {"/16", "/8", "/4", "/3", "/2", "",
+                               "x2",  "x3", "x4", "x8", "x16"};
 
   // calculates phase increment per sample
   float calcPhaseIncr() { return (TWOPI_F * freq_ * mult_) / sr_; };

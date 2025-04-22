@@ -24,9 +24,10 @@ public:
   void ClearDisplay() { field_.display.Fill(false); }
   void UpdateDisplay() { field_.display.Update(); }
 
-  void PrintBPM(float bpm, uint8_t x, uint8_t y) {
-    FixedCapStr<10> bpmStr("BPM:");
+  void PrintBPM(float bpm, const char *mult, uint8_t x, uint8_t y) {
+    FixedCapStr<13> bpmStr("BPM:");
     bpmStr.AppendFloat(bpm);
+    bpmStr.Append(mult);
     field_.display.SetCursor(x, y);
     field_.display.WriteString(bpmStr, Font_6x8, true);
   }

@@ -20,7 +20,8 @@ TriggerSequencer seq1;
 TriggerSequencer seq2;
 PitchSequencer pitchSeq;
 Oscillator osc;
-Filter filter;
+Filter filter1;
+Filter filter2;
 Envelope env1;
 
 // play/pause
@@ -75,8 +76,8 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
     float envOut = env1.Process();
     osc.SetAmp(envOut);
     osc.Process(&out1, &out2);
-    out1 = filter.Process(out1);
-    out2 = filter.Process(out2);
+    out1 = filter1.Process(out1);
+    out2 = filter2.Process(out2);
 
     out[0][i] = out1;
     out[1][i] = out2;
@@ -95,14 +96,14 @@ int main(void) {
 
   // Init stuff
   hw.Init(AudioCallback);
-
   clock.Init(2, hw.Field().AudioSampleRate());
   seq1.Init(8);
   seq2.Init(8);
   pitchSeq.Init(8);
   osc.Init(hw.Field().AudioSampleRate());
   osc.SetMode(Oscillator::MODE_SAW);
-  filter.Init(hw.Field().AudioSampleRate());
+  filter1.Init(hw.Field().AudioSampleRate());
+  filter2.Init(hw.Field().AudioSampleRate());
   env1.Init(hw.Field().AudioSampleRate());
 
   // shift button
@@ -162,21 +163,25 @@ int main(void) {
           // notes are from 0 to 87, see Quantizer class
           pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
         } else {
+          // BPM, Mult, Freq, Q,
           switch (i) {
           case 0:
             // knob 1, bpm (from 20 to 220)
             clock.SetFreq(hw.ScaleKnob(i, 20, 220) / 60.f);
             break;
           case 1:
-            // knob 2, osc mode?
+            // knob 2, bpm mult
+            clock.SetMult(static_cast<int>(hw.ScaleKnob(i, 0, 10.9f)));
             break;
           case 2:
             // knob 3, filter frequency
-            filter.SetFreq(20.f * pow(1000.0f, hw.ScaleKnob(i, 0.0f, 1.0f)));
+            filter1.SetFreq(20.f * pow(1000.0f, hw.ScaleKnob(i, 0.0f, 1.0f)));
+            filter2.SetFreq(20.f * pow(1000.0f, hw.ScaleKnob(i, 0.0f, 1.0f)));
             break;
           case 3:
             // knob 4, filter q
-            filter.SetQ(hw.ScaleKnob(i, 0.2f, 5.0f));
+            filter1.SetQ(hw.ScaleKnob(i, 0.2f, 5.0f));
+            filter2.SetQ(hw.ScaleKnob(i, 0.2f, 5.0f));
             break;
           }
         }
@@ -192,12 +197,12 @@ int main(void) {
 
       hw.ClearDisplay();
 
-      hw.PrintBPM(clock.GetBpm(), 0, 0);
+      hw.PrintBPM(clock.GetBpm(), clock.GetMultChar(), 0, 0);
       hw.PrintCPU(cpuUsage, 86, 0);
       hw.PrintShift(shift, 0, 56);
 
       // FixedCapStr<32> var("");
-      // var.AppendFloat(hw.GetKnobValue(0));
+      // var.AppendFloat(hw.ScaleKnob(1, 0, 10.9f));
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(var, Font_6x8, true);
 
