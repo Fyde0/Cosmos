@@ -2,7 +2,7 @@
 TARGET = Cosmos
 
 # Sources
-CPP_SOURCES = Cosmos.cpp 
+CPP_SOURCES = Cosmos.cpp Filter.cpp
 
 # Library Locations
 # run make in these folders first

@@ -41,7 +41,7 @@ public:
 
   void SetMult(uint8_t multIndex) {
     // clamp
-    // value = (value < min) ? min : (value > max ? max : multIndex);
+    // value = (value < min) ? min : (value > max ? max : value);
     uint8_t maxValue = sizeof(mults_) / sizeof(mults_[0]) - 1; // array size
     multIndex_ =
         (multIndex < 0) ? 0 : (multIndex > maxValue ? maxValue : multIndex);

@@ -47,9 +47,18 @@ public:
     field_.display.WriteString(cpu, Font_6x8, true);
   }
 
-  void PrintShift(bool shift, uint8_t x, uint8_t y) {
+  /**
+   * Prints the shift button status on screen
+   *
+   * @param num which shift button (1 or 2) as uint8_t
+   * @param shift shift status as boolean
+   * @param x X position as uint8_t
+   * @param y Y position as uint8_t
+   */
+  void PrintShift(uint8_t num, bool shift, uint8_t x, uint8_t y) {
     if (shift) {
-      FixedCapStr<5> shift("Shift");
+      FixedCapStr<7> shift("Shift ");
+      shift.AppendInt(num);
       field_.display.SetCursor(x, y);
       field_.display.WriteString(shift, Font_6x8, true);
     }
@@ -195,7 +204,7 @@ private:
   // this is so we apply changes only if there were any
   bool keysLedsChanged_ = false;
   // how long to blink LEDs for, in AudioCallback iterations
-  uint8_t blinkingTime_ = 100;
+  uint8_t blinkingTime_ = 50;
   bool blinking_ = false;
 
   /**

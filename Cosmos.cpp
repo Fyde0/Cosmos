@@ -73,8 +73,8 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
       }
     }
 
-    float envOut = env1.Process();
-    osc.SetAmp(envOut);
+    float env1Out = env1.Process();
+    osc.SetAmp(env1Out);
     osc.Process(&out1, &out2);
     out1 = filter1.Process(out1);
     out2 = filter2.Process(out2);
@@ -106,8 +106,9 @@ int main(void) {
   filter2.Init(hw.Field().AudioSampleRate());
   env1.Init(hw.Field().AudioSampleRate());
 
-  // shift button
-  bool shift = false;
+  // shift buttons
+  bool shift1 = false;
+  bool shift2 = false;
   // main loop iterations
   uint8_t mainCount = 0;
   while (1) {
@@ -120,46 +121,52 @@ int main(void) {
 
     hw.ProcessAllControls();
 
+    // switches
+    shift1 = hw.SwitchPressed(1);
+    shift2 = hw.SwitchPressed(2);
+
     // keys
-    for (size_t i = 0; i < 16; ++i) {
-      if (hw.KeyboardRisingEdge(i)) {
-        if (hw.GetKeyGroup(i) == 'A') {
-          seq1.ToggleStep(i - 8);
+    if (shift1 && !shift2) {
+      // shift1 + A1, play/pause
+      if (hw.KeyboardRisingEdge(8)) {
+        if (play) {
+          play = !play; // stop
+        } else {
+          // reset all seqs
+          // sequencer advances before step is processed,
+          // so you need to set it to the last step when starting
+          seq1.SetCurrentStep(7);
+          seq2.SetCurrentStep(7);
+          pitchSeq.SetCurrentStep(7);
+          // set phase to end so that you don't have to wait for the next tick
+          clock.SetPhaseToEnd();
+          stepTime = 0;
+          play = !play;
         }
-        if (hw.GetKeyGroup(i) == 'B') {
-          seq2.ToggleStep(i);
-        }
-        hw.ToggleKeyLed(i);
       }
     }
 
-    // switches
-    // switch 1, play/pause
-    if (hw.SwitchRisingEdge(1)) {
-      if (play) {
-        play = !play; // stop
-      } else {
-        // reset all seqs
-        // sequencer advances before step is processed,
-        // so you need to set it to the last step when starting
-        seq1.SetCurrentStep(7);
-        seq2.SetCurrentStep(7);
-        pitchSeq.SetCurrentStep(7);
-        // set phase to end so that you don't have to wait for the next tick
-        clock.SetPhaseToEnd();
-        stepTime = 0;
-        play = !play;
+    // no shift, toggle steps
+    if (!shift2 && !shift1) {
+      for (size_t i = 0; i < 16; ++i) {
+        if (hw.KeyboardRisingEdge(i)) {
+          if (hw.GetKeyGroup(i) == 'A') {
+            seq1.ToggleStep(i - 8);
+          }
+          if (hw.GetKeyGroup(i) == 'B') {
+            seq2.ToggleStep(i);
+          }
+          hw.ToggleKeyLed(i);
+        }
       }
     }
-    // switch 2, shift
-    shift = hw.SwitchPressed(2);
 
     // knobs
     for (size_t i = 0; i < 8; i++) {
       // do stuff only if the knob was moved
       if (hw.DidKnobChange(i)) {
-        // change notes if shift is pressed
-        if (shift) {
+        // change notes if shift2 is pressed
+        if (shift2 && !shift1) {
           // notes are from 0 to 87, see Quantizer class
           pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
         } else {
@@ -175,13 +182,13 @@ int main(void) {
             break;
           case 2:
             // knob 3, filter frequency
-            filter1.SetFreq(20.f * pow(1000.0f, hw.ScaleKnob(i, 0.0f, 1.0f)));
-            filter2.SetFreq(20.f * pow(1000.0f, hw.ScaleKnob(i, 0.0f, 1.0f)));
+            filter1.SetFreq(hw.ScaleKnob(i, 0.0f, 1.0f));
+            filter2.SetFreq(hw.ScaleKnob(i, 0.0f, 1.0f));
             break;
           case 3:
             // knob 4, filter q
-            filter1.SetQ(hw.ScaleKnob(i, 0.2f, 5.0f));
-            filter2.SetQ(hw.ScaleKnob(i, 0.2f, 5.0f));
+            filter1.SetQ(hw.ScaleKnob(i, 0.0f, 1.0f));
+            filter2.SetQ(hw.ScaleKnob(i, 0.0f, 1.0f));
             break;
           }
         }
@@ -199,10 +206,11 @@ int main(void) {
 
       hw.PrintBPM(clock.GetBpm(), clock.GetMultChar(), 0, 0);
       hw.PrintCPU(cpuUsage, 86, 0);
-      hw.PrintShift(shift, 0, 56);
+      hw.PrintShift(1, shift1, 0, 56);
+      hw.PrintShift(2, shift2, 86, 56);
 
-      // FixedCapStr<32> var("");
-      // var.AppendFloat(hw.ScaleKnob(1, 0, 10.9f));
+      // FixedCapStr<16> var("");
+      // var.AppendFloat();
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(var, Font_6x8, true);
 
