@@ -24,12 +24,16 @@ public:
 
   void SetCurrentStep(uint8_t step) { currentStep_ = step; }
   void SetNote(uint8_t step, uint8_t note) {
-    sequenceNote_[step] = note;
+    sequenceNote_[step] = quant_.QuantizeNote(note);
     sequenceHertz_[step] = quant_.NoteToHertz(note, true);
   }
 
   uint8_t GetCurrentStep() const { return currentStep_; }
   float GetCurrentNoteHertz() const { return sequenceHertz_[currentStep_]; }
+
+  const char *StepToName(uint8_t step) {
+    return quant_.NoteToName(sequenceNote_[step]);
+  }
 
 private:
   uint8_t steps_;

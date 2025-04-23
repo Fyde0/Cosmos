@@ -8,7 +8,7 @@
 #include "daisy_field.h"
 
 #define MAIN_DELAY 5 // ms, main loop iteration time (separate from audio)
-#define DISPLAY_UPDATE_DELAY 20 // update display every x main iterations
+#define DISPLAY_UPDATE_DELAY 10 // update display every x main iterations
 #define LEDS_UPDATE_DELAY 2     // update LEDs every x main iterations
 
 using namespace daisy;
@@ -186,8 +186,8 @@ int main(void) {
         }
         // shift 2, change notes
         if (shift2 && !shift1) {
-          // notes are from 0 to 87, see Quantizer class
-          pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
+          // notes are from 21 to 108, see Quantizer class
+          pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 21, 108)));
         }
         // no shift
         if (!shift1 && !shift2) {
@@ -245,10 +245,36 @@ int main(void) {
       hw.PrintShift(1, shift1, 0, 56);
       hw.PrintShift(2, shift2, 86, 56);
 
-      // FixedCapStr<16> var("");
-      // var.AppendFloat();
+      // print sequence to screen
+      for (size_t i = 0; i < 8; i++) {
+        uint8_t xPos = i * 30 + 6; // + offset to center
+        uint8_t yPos = 20;
+        // invert color if step is active
+        bool color = !(seq1.IsStepActive(i));
+        // values for second row
+        if (i > 3) {
+          xPos = xPos - (4 * 30);
+          yPos = yPos + 10;
+        }
+        // if step is playing use [ ]
+        FixedCapStr<4> noteStr("");
+        (play && seq1.GetCurrentStep() == i) ? noteStr.Append("[")
+                                             : noteStr.Append(" ");
+        noteStr.Append(pitchSeq.StepToName(i));
+        (play && seq1.GetCurrentStep() == i) ? noteStr.Append("]")
+                                             : noteStr.Append(" ");
+        hw.Field().display.SetCursor(xPos, yPos);
+        hw.Field().display.WriteString(noteStr, Font_6x8, color);
+      }
+
+      // FixedCapStr<64> var("");
+      // var.Append(pitchSeq.GetStepNames14());
       // hw.Field().display.SetCursor(0, 20);
       // hw.Field().display.WriteString(var, Font_6x8, true);
+      // FixedCapStr<64> var2("");
+      // var2.Append(pitchSeq.GetStepNames58());
+      // hw.Field().display.SetCursor(0, 30);
+      // hw.Field().display.WriteString(var2, Font_6x8, true);
 
       hw.UpdateDisplay();
     }

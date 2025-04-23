@@ -47,8 +47,8 @@ private:
   // 0  1  2  3  4  5  6  7  8  9  10 11
   uint8_t qKey_, qScale_;
 
-  const char notes[12][3] = {"A ", "A#", "B ", "C ", "C#", "D ",
-                             "D#", "E ", "F ", "F#", "G ", "G#"};
+  const char *notes[12] = {"A ", "A#", "B ", "C ", "C#", "D ",
+                           "D#", "E ", "F ", "F#", "G ", "G#"};
 
   std::map<int, std::array<int, 12>> qScales = {
       // I'm sure there's a better way to do this

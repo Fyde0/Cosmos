@@ -37,6 +37,7 @@ public:
       stageTime_ = 0.0f;
     } else {
       // retriggers, to avoid click
+      // TODO make this an option, filter should not retrigger
       stageTime_ = out_ * attack_;
     }
     stage_ = 1;

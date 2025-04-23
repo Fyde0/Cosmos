@@ -25,6 +25,7 @@ public:
   void SetCurrentStep(uint8_t step) { currentStep_ = step; }
 
   uint8_t GetCurrentStep() const { return currentStep_; }
+  bool IsStepActive(uint8_t step) { return sequence_[step]; }
   bool IsCurrentStepActive() const { return sequence_[currentStep_]; }
 
 private:
