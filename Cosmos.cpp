@@ -23,6 +23,7 @@ Oscillator osc;
 Filter filter1;
 Filter filter2;
 Envelope env1;
+Envelope env2;
 
 // play/pause
 bool play = false;
@@ -67,6 +68,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
 
         if (seq1.IsCurrentStepActive()) {
           env1.Trigger();
+          env2.Trigger();
           // set oscillator frequency
           osc.SetFreq(pitchSeq.GetCurrentNoteHertz());
         }
@@ -74,10 +76,13 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
     }
 
     float env1Out = env1.Process();
+    float env2Out = env2.Process();
     osc.SetAmp(env1Out);
     osc.Process(&out1, &out2);
-    out1 = filter1.Process(out1);
-    out2 = filter2.Process(out2);
+    filter1.AddFreq(env2Out);
+    filter2.AddFreq(env2Out);
+    out1 = filter1.Process(out1 * 0.50f);
+    out2 = filter2.Process(out2 * 0.50f);
 
     out[0][i] = out1;
     out[1][i] = out2;
@@ -105,6 +110,7 @@ int main(void) {
   filter1.Init(hw.Field().AudioSampleRate());
   filter2.Init(hw.Field().AudioSampleRate());
   env1.Init(hw.Field().AudioSampleRate());
+  env2.Init(hw.Field().AudioSampleRate());
 
   // shift buttons
   bool shift1 = false;
@@ -165,12 +171,8 @@ int main(void) {
     for (size_t i = 0; i < 8; i++) {
       // do stuff only if the knob was moved
       if (hw.DidKnobChange(i)) {
-        // change notes if shift2 is pressed
-        if (shift2 && !shift1) {
-          // notes are from 0 to 87, see Quantizer class
-          pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
-        } else {
-          // BPM, Mult, Freq, Q,
+        // shift 1
+        if (shift1 && !shift2) {
           switch (i) {
           case 0:
             // knob 1, bpm (from 20 to 220)
@@ -180,15 +182,49 @@ int main(void) {
             // knob 2, bpm mult
             clock.SetMult(static_cast<int>(hw.ScaleKnob(i, 0, 10.9f)));
             break;
+          }
+        }
+        // shift 2, change notes
+        if (shift2 && !shift1) {
+          // notes are from 0 to 87, see Quantizer class
+          pitchSeq.SetNote(i, static_cast<int>(hw.ScaleKnob(i, 0, 87)));
+        }
+        // no shift
+        if (!shift1 && !shift2) {
+          // BPM, Mult, Freq, Q,
+          switch (i) {
+          case 0:
+            // knob 1, transpose?
+            break;
+          case 1:
+            // knob 2, env1 attack
+            env1.SetAttack(hw.ScaleKnob(i, 0.001f, 5.0f));
+            break;
           case 2:
-            // knob 3, filter frequency
+            // knob 3, env1 decay
+            env1.SetDecay(hw.ScaleKnob(i, 0.001f, 5.0f));
+            break;
+          case 3:
+            // knob 4, filter frequency
             filter1.SetFreq(hw.ScaleKnob(i, 0.0f, 1.0f));
             filter2.SetFreq(hw.ScaleKnob(i, 0.0f, 1.0f));
             break;
-          case 3:
-            // knob 4, filter q
+          case 4:
+            // knob 5, filter q
             filter1.SetQ(hw.ScaleKnob(i, 0.0f, 1.0f));
             filter2.SetQ(hw.ScaleKnob(i, 0.0f, 1.0f));
+            break;
+          case 5:
+            // knob 6, env2 attack
+            env2.SetAttack(hw.ScaleKnob(i, 0.001f, 5.0f));
+            break;
+          case 6:
+            // knob 7, env2 decay
+            env2.SetDecay(hw.ScaleKnob(i, 0.001f, 5.0f));
+            break;
+          case 7:
+            // knob 8, env2 scale
+            env2.SetScale(hw.ScaleKnob(i, 0.0f, 1.0f));
             break;
           }
         }

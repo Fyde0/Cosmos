@@ -7,11 +7,17 @@ public:
   Filter() {}
   ~Filter() {}
 
+  // Call before using
   void Init(float sr);
+  // Get next sample
   float Process(float in);
 
+  // Set frequency index (0 to 1)
   void SetFreq(float freq);
+  // Set Q index (0 to 1)
   void SetQ(float q);
+  // Value to add to frequency (0 to 1), eg for envelope
+  void AddFreq(float freq);
 
   float GetFreq();
   float GetQ();
@@ -21,7 +27,7 @@ private:
   const float maxFreq_ = 20000.0f;
   const float minQ_ = 0.2f;
   const float maxQ_ = 5.0f;
-  float sr_, freqIndex_, qIndex_, out_;
+  float sr_, freqIndex_, addFreqIndex_, qIndex_, out_;
 
   float x[3]{};
   float y[3]{};

@@ -20,15 +20,19 @@ public:
   }
 
   // 0.001sec to 10sec
-  inline void SetAttack(float attack) {
-    attack_ = std::min(std::max(attack, 0.001f), 10.0f);
+  void SetAttack(float attack) {
+    attack_ = (attack < 0.001f) ? 0.001f : (attack > 5.0f ? 5.0f : attack);
   }
 
-  inline void SetDecay(float decay) {
-    decay_ = std::min(std::max(decay, 0.001f), 10.0f);
+  void SetDecay(float decay) {
+    decay_ = (decay < 0.001f) ? 0.001f : (decay > 5.0f ? 5.0f : decay);
   }
 
-  inline void Trigger() {
+  void SetScale(float scale) {
+    scale_ = (scale < 0.0f) ? 0.0f : (scale > 1.0f ? 1.0f : scale);
+  }
+
+  void Trigger() {
     if (out_ == 0.0f) {
       stageTime_ = 0.0f;
     } else {
@@ -62,8 +66,7 @@ public:
         stage_ = 0;
       }
     }
-    // TODO apply scale here
-    return out_;
+    return out_ * scale_;
   }
 
 private:

@@ -9,6 +9,7 @@ Filter::FilterCoeffs Filter::coeffTable_[Filter::coeffQSteps_]
 void Filter::Init(float sr) {
   sr_ = sr;
   freqIndex_ = 0.5f;
+  addFreqIndex_ = 0.0f;
   qIndex_ = 0.2f;
   out_ = 0.0f;
   x[0] = x[1] = x[2] = 0.0;
@@ -17,7 +18,7 @@ void Filter::Init(float sr) {
 }
 
 float Filter::Process(float in) {
-  FilterCoeffs coeffs = GetNearestCoeffs(freqIndex_, qIndex_);
+  FilterCoeffs coeffs = GetNearestCoeffs(freqIndex_ + addFreqIndex_, qIndex_);
 
   x[2] = x[1];
   x[1] = x[0];
@@ -41,6 +42,11 @@ void Filter::SetFreq(float freqIndex) {
   freqIndex_ = freqIndex;
 }
 
+void Filter::AddFreq(float freqIndex) {
+  // not clamping here because it already happens in GetNearestCoeffs
+  addFreqIndex_ = freqIndex;
+}
+
 void Filter::SetQ(float qIndex) {
   qIndex = (qIndex < 0) ? 0 : (qIndex > 1.0f ? 1.0f : qIndex);
   qIndex_ = qIndex;
@@ -56,7 +62,6 @@ void Filter::InitLookupTable() {
     for (int freqIndex = 0; freqIndex < coeffFreqSteps_; ++freqIndex) {
       float fT = float(freqIndex) / (coeffFreqSteps_ - 1);
       float freq = minFreq_ * powf(maxFreq_ / minFreq_, fT);
-      // CalcCoeffs(freq, freqIndex, q, qIndex, sr_);
 
       float w0 = 2.0f * PI_F * (freq / sr_);
       float cosw0 = cos(w0);
@@ -76,6 +81,8 @@ void Filter::InitLookupTable() {
 }
 
 Filter::FilterCoeffs Filter::GetNearestCoeffs(float freq, float q) {
+  // clamp is necessary because envelope makes freq go above 1
+  freq = (freq < 0) ? 0 : (freq > 1.0f ? 1.0f : freq);
   // scale to index
   // could interpolate here but I don't think it's necessary
   int fi = static_cast<int>(freq * (coeffFreqSteps_ - 1));
