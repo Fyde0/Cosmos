@@ -38,12 +38,17 @@ float out1, out2;
 float cpuUsage = 0.f;
 // count step time for blinking LEDs
 uint16_t stepTime = 0;
+//
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
                    size_t size) {
 
   // for CPU %
   uint32_t start = System::GetTick();
 
+  // midi clock (this is set in main)
+  hw.ProcessMidiClock();
+
+  // buffer loop
   for (size_t i = 0; i < size; i++) {
 
     if (play) {
@@ -101,6 +106,7 @@ int main(void) {
 
   // Init stuff
   hw.Init(AudioCallback);
+  hw.InitMidi();
   clock.Init(2, hw.Field().AudioSampleRate());
   seq1.Init(8);
   seq2.Init(8);
@@ -120,6 +126,11 @@ int main(void) {
   while (1) {
     // count main loop iterations
     ++mainCount;
+
+    // set bpm from midi
+    if (hw.UsingMidiClock()) {
+      clock.SetFreq(hw.GetMidiClock() / 60.0f);
+    }
 
     /**
      * CONTROLS
@@ -175,8 +186,11 @@ int main(void) {
         if (shift1 && !shift2) {
           switch (i) {
           case 0:
-            // knob 1, bpm (from 20 to 220)
-            clock.SetFreq(hw.ScaleKnob(i, 20, 220) / 60.f);
+            // knob 1, bpm (from 20 to 220), only if there's no midi clock
+            if (!hw.UsingMidiClock()) {
+              clock.SetFreq(static_cast<int>(hw.ScaleKnob(i, 20, 220.9)) /
+                            60.f);
+            }
             break;
           case 1:
             // knob 2, bpm mult
@@ -248,7 +262,7 @@ int main(void) {
       // print sequence to screen
       for (size_t i = 0; i < 8; i++) {
         uint8_t xPos = i * 30 + 6; // + offset to center
-        uint8_t yPos = 20;
+        uint8_t yPos = 15;
         // invert color if step is active
         bool color = !(seq1.IsStepActive(i));
         // values for second row
@@ -267,13 +281,16 @@ int main(void) {
         hw.Field().display.WriteString(noteStr, Font_6x8, color);
       }
 
-      // FixedCapStr<64> var("");
-      // var.Append(pitchSeq.GetStepNames14());
-      // hw.Field().display.SetCursor(0, 20);
+      // FixedCapStr<32> var("Midi BPM: ");
+      // if (hw.UsingMidiClock()) {
+      //   var.AppendInt(hw.GetMidiClock());
+      // } else {
+      //   var.Append("no");
+      // }
+      // hw.Field().display.SetCursor(0, 40);
       // hw.Field().display.WriteString(var, Font_6x8, true);
       // FixedCapStr<64> var2("");
-      // var2.Append(pitchSeq.GetStepNames58());
-      // hw.Field().display.SetCursor(0, 30);
+      // hw.Field().display.SetCursor(0, 50);
       // hw.Field().display.WriteString(var2, Font_6x8, true);
 
       hw.UpdateDisplay();
