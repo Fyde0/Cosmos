@@ -39,14 +39,35 @@ float cpuUsage = 0.f;
 // count step time for blinking LEDs
 uint16_t stepTime = 0;
 //
+void ResetAllSeqs() {
+  // sequencer advances before step is processed,
+  // so you need to set it to the last step when starting
+  seq1.SetCurrentStep(7);
+  seq2.SetCurrentStep(7);
+  pitchSeq.SetCurrentStep(7);
+  // set phase to end so that you don't have to wait for the next tick
+  clock.SetPhaseToEnd();
+  stepTime = 0;
+}
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
                    size_t size) {
 
   // for CPU %
   uint32_t start = System::GetTick();
 
-  // midi clock (this is set in main)
+  // midi clock (bpm is set in main)
   hw.ProcessMidiClock();
+
+  if (hw.UsingMidiClock()) {
+    bool midiIsPlaying = hw.MidiIsPlaying();
+    if (!play && midiIsPlaying) {
+      ResetAllSeqs();
+      play = true;
+    }
+    if (play && !midiIsPlaying) {
+      play = false;
+    }
+  }
 
   // buffer loop
   for (size_t i = 0; i < size; i++) {
@@ -144,21 +165,13 @@ int main(void) {
 
     // keys
     if (shift1 && !shift2) {
-      // shift1 + A1, play/pause
-      if (hw.KeyboardRisingEdge(8)) {
+      // shift1 + A1, play/pause, only if not using midi
+      if (hw.KeyboardRisingEdge(8) && !hw.UsingMidiClock()) {
         if (play) {
-          play = !play; // stop
+          play = false; // stop
         } else {
-          // reset all seqs
-          // sequencer advances before step is processed,
-          // so you need to set it to the last step when starting
-          seq1.SetCurrentStep(7);
-          seq2.SetCurrentStep(7);
-          pitchSeq.SetCurrentStep(7);
-          // set phase to end so that you don't have to wait for the next tick
-          clock.SetPhaseToEnd();
-          stepTime = 0;
-          play = !play;
+          ResetAllSeqs();
+          play = true;
         }
       }
     }
@@ -289,7 +302,12 @@ int main(void) {
       // }
       // hw.Field().display.SetCursor(0, 40);
       // hw.Field().display.WriteString(var, Font_6x8, true);
-      // FixedCapStr<64> var2("");
+      // FixedCapStr<32> var2("");
+      // if (hw.GetPlaying()) {
+      //   var2.Append("yes");
+      // } else {
+      //   var2.Append("no");
+      // }
       // hw.Field().display.SetCursor(0, 50);
       // hw.Field().display.WriteString(var2, Font_6x8, true);
 

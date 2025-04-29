@@ -210,6 +210,12 @@ public:
             midiPacketCount = 0;
           }
         }
+        if (m.srt_type == Start || m.srt_type == Continue) {
+          midiPlaying = true;
+        }
+        if (m.srt_type == Stop) {
+          midiPlaying = false;
+        }
       }
     }
     if (usingMidiClock &&
@@ -220,6 +226,7 @@ public:
 
   bool UsingMidiClock() { return usingMidiClock; }
   uint16_t GetMidiClock() { return midiBpm; }
+  bool MidiIsPlaying() { return midiPlaying; }
 
   // getter for passthrough
   daisy::DaisyField &Field() { return field_; }
@@ -269,6 +276,7 @@ private:
   // for midi clock in
   bool usingMidiClock = false;
   uint16_t midiBpm = 0;
+  bool midiPlaying = false;
   // when the last clock message was received
   uint32_t lastMidiClockTime = 0;
   // timeout to go back to internal clock
