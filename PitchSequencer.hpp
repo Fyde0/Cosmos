@@ -12,7 +12,7 @@ public:
     steps_ = steps;
     quant_.Init();
     currentStep_ = 0;
-    sequenceHertz_.resize(steps_, 440.f);
+    transpose_ = 0;
   }
 
   void Advance() {
@@ -23,22 +23,23 @@ public:
   }
 
   void SetCurrentStep(uint8_t step) { currentStep_ = step; }
-  void SetNote(uint8_t step, uint8_t note) {
-    sequenceNote_[step] = quant_.QuantizeNote(note);
-    sequenceHertz_[step] = quant_.NoteToHertz(note, true);
-  }
+  void SetNote(uint8_t step, uint8_t note) { sequenceNote_[step] = note; }
+  void SetTranspose(int8_t transpose) { transpose_ = transpose; }
 
   uint8_t GetCurrentStep() const { return currentStep_; }
-  float GetCurrentNoteHertz() const { return sequenceHertz_[currentStep_]; }
+  float GetCurrentNoteHertz() {
+    return quant_.NoteToHertz(sequenceNote_[currentStep_] + transpose_);
+  }
+  int8_t GetTranspose() const { return transpose_; }
 
   const char *StepToName(uint8_t step) {
-    return quant_.NoteToName(sequenceNote_[step]);
+    return quant_.NoteToName(sequenceNote_[step] + transpose_);
   }
 
 private:
   uint8_t steps_;
   Quantizer quant_;
   uint8_t currentStep_;
-  std::vector<float> sequenceNote_;
-  std::vector<float> sequenceHertz_;
+  std::vector<uint8_t> sequenceNote_;
+  int8_t transpose_;
 };

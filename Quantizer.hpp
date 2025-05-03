@@ -9,7 +9,7 @@ public:
   ~Quantizer() {}
 
   void Init() {
-    qKey_ = 3; // C
+    qKey_ = 3;
     qScale_ = 3;
   }
 
@@ -18,10 +18,12 @@ public:
   void SetScale(uint8_t scale) { qScale_ = scale; }
 
   uint8_t QuantizeNote(uint8_t note) {
+    note = (note < 21) ? 21 : (note > 108 ? 108 : note);
     while (true) {
       for (uint8_t increment : qScales[qScale_]) {
-        // given note - current key modulo 12
-        if ((note - qKey_) % 12 == increment) {
+        // - qKey_ to apply key
+        // - 21 because midi notes start from 21 but my scales start from 0
+        if ((note - qKey_ - 21) % 12 == increment) {
           return note;
         }
       }
@@ -29,15 +31,17 @@ public:
     }
   }
 
-  float NoteToHertz(uint8_t note, bool quant = false) {
-    if (quant) {
-      note = QuantizeNote(note);
-    }
-    // midi note to hertz, +21 because I start from A0 (note 21)
-    return 440.0f * pow(2.0f, (note + 21.0f - 69.0f) / 12.0f);
+  float NoteToHertz(uint8_t note) {
+    note = QuantizeNote(note);
+    // midi note to hertz
+    return 440.0f * pow(2.0f, (note - 69.0f) / 12.0f);
   }
 
-  const char *NoteToName(uint8_t note) { return notes[note % 12]; }
+  const char *NoteToName(uint8_t note) {
+    // - 21 because midi notes start from 21 but my scales start from 0
+    note = QuantizeNote(note) - 21;
+    return notes[note % 12];
+  }
 
 private:
   // midi notes from 21 to 108

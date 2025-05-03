@@ -192,9 +192,9 @@ int main(void) {
     // Knobs
     // 1     2     3     4     5     6     7     8
     // No shifts
-    // Tran, Osc?, Osc?, Osc?, Freq, Res, FilD?
+    // Tran, Osc?, Osc?, Osc?, EnvD, Freq, Res , FilD?
     // Shift 1
-    // BPM , Mult, EnvA, EnvD, FilA, FilD, FilS, Comp?
+    // BPM , Mult, Key , Scal, EnvA, FilA, FilS, Comp?
     // Shift 2
     // Pitch
 
@@ -231,6 +231,8 @@ int main(void) {
           switch (i) {
           case 0:
             // knob 1, transpose?
+            pitchSeq.SetTranspose(
+                static_cast<int>(hw.ScaleKnob(i, -24.0f, 24.0f)));
             break;
           case 1:
             // knob 2, env1 attack
@@ -304,7 +306,7 @@ int main(void) {
       }
 
       // FixedCapStr<32> var("");
-      // var.AppendFloat(env1.GetAttack(), 4);
+      // var.AppendFloat(pitchSeq.GetTranspose());
       // hw.Field().display.SetCursor(0, 40);
       // hw.Field().display.WriteString(var, Font_6x8, true);
 
