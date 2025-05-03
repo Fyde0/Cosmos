@@ -166,10 +166,21 @@ public:
 
   // knobs
 
-  float ScaleKnob(int i, float minOutput, float maxOutput) {
-    return (((knobValues_[i] - minKnob_) / (maxKnob_ - minKnob_)) *
-            (maxOutput - minOutput)) +
-           minOutput;
+  float ScaleKnob(int i, float minOutput, float maxOutput, bool log = false) {
+
+    float norm = (knobValues_[i] - minKnob_) / (maxKnob_ - minKnob_);
+    norm = (norm < 0.0f) ? 0.0f : (norm > 1.0f ? 1.0f : norm);
+
+    if (log) {
+      // log scale
+      float logMin = logf(minOutput);
+      float logMax = logf(maxOutput);
+      // the power shapes the curve, 1 = normal log scale
+      return expf(logMin + powf(norm, 0.5) * (logMax - logMin));
+    } else {
+      // linear scale
+      return norm * (maxOutput - minOutput) + minOutput;
+    }
   }
 
   bool DidKnobChange(uint8_t i) { return knobChanged_[i]; }

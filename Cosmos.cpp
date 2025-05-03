@@ -163,18 +163,16 @@ int main(void) {
     shift1 = hw.SwitchPressed(1);
     shift2 = hw.SwitchPressed(2);
 
-    // keys
-    if (shift1 && !shift2) {
-      // shift1 + A1, play/pause, only if not using midi
-      if (hw.KeyboardRisingEdge(8) && !hw.UsingMidiClock()) {
-        if (play) {
-          play = false; // stop
-        } else {
-          ResetAllSeqs();
-          play = true;
-        }
+    if (shift1 && hw.SwitchRisingEdge(2) && !hw.UsingMidiClock()) {
+      if (play) {
+        play = false; // stop
+      } else {
+        ResetAllSeqs();
+        play = true;
       }
     }
+
+    // keys
 
     // no shift, toggle steps
     if (!shift2 && !shift1) {
@@ -190,6 +188,18 @@ int main(void) {
         }
       }
     }
+
+    // Knobs
+    // 1     2     3     4     5     6     7     8
+    // No shifts
+    // Tran, Osc?, Osc?, Osc?, Freq, Res, FilD?
+    // Shift 1
+    // BPM , Mult, EnvA, EnvD, FilA, FilD, FilS, Comp?
+    // Shift 2
+    // Pitch
+
+    // LFOs in shift 2?
+    // Osc mode and filter mode in shift 1?
 
     // knobs
     for (size_t i = 0; i < 8; i++) {
@@ -218,18 +228,17 @@ int main(void) {
         }
         // no shift
         if (!shift1 && !shift2) {
-          // BPM, Mult, Freq, Q,
           switch (i) {
           case 0:
             // knob 1, transpose?
             break;
           case 1:
             // knob 2, env1 attack
-            env1.SetAttack(hw.ScaleKnob(i, 0.001f, 5.0f));
+            env1.SetAttack(hw.ScaleKnob(i, 0.001f, 5.0f, true));
             break;
           case 2:
             // knob 3, env1 decay
-            env1.SetDecay(hw.ScaleKnob(i, 0.001f, 5.0f));
+            env1.SetDecay(hw.ScaleKnob(i, 0.001f, 5.0f, true));
             break;
           case 3:
             // knob 4, filter frequency
@@ -243,11 +252,11 @@ int main(void) {
             break;
           case 5:
             // knob 6, env2 attack
-            env2.SetAttack(hw.ScaleKnob(i, 0.001f, 5.0f));
+            env2.SetAttack(hw.ScaleKnob(i, 0.001f, 5.0f, true));
             break;
           case 6:
             // knob 7, env2 decay
-            env2.SetDecay(hw.ScaleKnob(i, 0.001f, 5.0f));
+            env2.SetDecay(hw.ScaleKnob(i, 0.001f, 5.0f, true));
             break;
           case 7:
             // knob 8, env2 scale
@@ -294,22 +303,10 @@ int main(void) {
         hw.Field().display.WriteString(noteStr, Font_6x8, color);
       }
 
-      // FixedCapStr<32> var("Midi BPM: ");
-      // if (hw.UsingMidiClock()) {
-      //   var.AppendInt(hw.GetMidiClock());
-      // } else {
-      //   var.Append("no");
-      // }
+      // FixedCapStr<32> var("");
+      // var.AppendFloat(env1.GetAttack(), 4);
       // hw.Field().display.SetCursor(0, 40);
       // hw.Field().display.WriteString(var, Font_6x8, true);
-      // FixedCapStr<32> var2("");
-      // if (hw.GetPlaying()) {
-      //   var2.Append("yes");
-      // } else {
-      //   var2.Append("no");
-      // }
-      // hw.Field().display.SetCursor(0, 50);
-      // hw.Field().display.WriteString(var2, Font_6x8, true);
 
       hw.UpdateDisplay();
     }

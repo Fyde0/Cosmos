@@ -70,6 +70,8 @@ public:
     return out_ * scale_;
   }
 
+  float GetAttack() { return attack_; }
+
 private:
   uint8_t stage; // OFF 0, ATTACK 1, DECAY 2
   float sr_, stageTime_, stageTimeInc_, stage_, attack_, decay_, curve_, scale_,
