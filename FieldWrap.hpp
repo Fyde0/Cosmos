@@ -24,44 +24,24 @@ public:
   void ClearDisplay() { field_.display.Fill(false); }
   void UpdateDisplay() { field_.display.Update(); }
 
-  void PrintBPM(uint16_t bpm, const char *mult, uint8_t x, uint8_t y) {
-    FixedCapStr<13> bpmStr("BPM:");
-    bpmStr.AppendInt(bpm);
-    bpmStr.Append(mult);
-    field_.display.SetCursor(x, y);
-    field_.display.WriteString(bpmStr, Font_6x8, true);
-  }
-
   /**
-   * Prints the CPU usage on screen
+   * Prints a char* to screen
    *
-   * @param usage CPU usage percentage as float
+   * @param text Text to print as char*
    * @param x X position as uint8_t
    * @param y Y position as uint8_t
+   * @param color true = white on black
    */
-  void PrintCPU(float usage, uint8_t x, uint8_t y) {
-    FixedCapStr<8> cpu("CPU:");
-    cpu.AppendInt(static_cast<int>(usage));
-    cpu.Append("%");
-    field_.display.SetCursor(x, y);
-    field_.display.WriteString(cpu, Font_6x8, true);
+  void PrintToScreen(const char *text, uint8_t x, uint8_t y,
+                     bool color = true) {
+    FixedCapStr<16> str(text);
+    PrintFixedCapStrToScreen(str, x, y);
   }
 
-  /**
-   * Prints the shift button status on screen
-   *
-   * @param num which shift button (1 or 2) as uint8_t
-   * @param shift shift status as boolean
-   * @param x X position as uint8_t
-   * @param y Y position as uint8_t
-   */
-  void PrintShift(uint8_t num, bool shift, uint8_t x, uint8_t y) {
-    if (shift) {
-      FixedCapStr<7> shift("Shift ");
-      shift.AppendInt(num);
-      field_.display.SetCursor(x, y);
-      field_.display.WriteString(shift, Font_6x8, true);
-    }
+  void PrintFixedCapStrToScreen(FixedCapStr<16> text, uint8_t x, uint8_t y,
+                                bool color = true) {
+    field_.display.SetCursor(x, y);
+    field_.display.WriteString(text, Font_6x8, color);
   }
 
   /**

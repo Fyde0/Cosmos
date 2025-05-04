@@ -71,6 +71,7 @@ public:
   }
 
   float GetAttack() { return attack_; }
+  float GetDecay() { return decay_; }
 
 private:
   uint8_t stage; // OFF 0, ATTACK 1, DECAY 2

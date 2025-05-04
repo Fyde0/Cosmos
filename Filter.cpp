@@ -52,8 +52,11 @@ void Filter::SetQ(float qIndex) {
   qIndex_ = qIndex;
 }
 
-float Filter::GetFreq() { return freqIndex_; }
-float Filter::GetQ() { return qIndex_; }
+float Filter::GetFreq() {
+  float freq = minFreq_ * powf(maxFreq_ / minFreq_, freqIndex_);
+  return freq;
+}
+float Filter::GetQ() { return minQ_ + (maxQ_ - minQ_) * qIndex_; }
 
 void Filter::InitLookupTable() {
   for (int qIndex = 0; qIndex < coeffQSteps_; ++qIndex) {

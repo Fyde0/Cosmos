@@ -11,6 +11,7 @@
 #define DISPLAY_UPDATE_DELAY 10 // update display every x main iterations
 #define LEDS_UPDATE_DELAY 2     // update LEDs every x main iterations
 
+using namespace std;
 using namespace daisy;
 
 FieldWrap hw;
@@ -144,6 +145,16 @@ int main(void) {
   bool shift2 = false;
   // main loop iterations
   uint8_t mainCount = 0;
+  // y position of text rows on screen
+  uint8_t row1 = 0;
+  uint8_t row2 = 11;
+  uint8_t row3 = 19;
+  uint8_t row4 = 30;
+  uint8_t row5 = 38;
+  uint8_t row6 = 48;
+  uint8_t row7 = 56;
+  // offset text on string to the right to center
+  uint8_t screenOffset = 6;
   while (1) {
     // count main loop iterations
     ++mainCount;
@@ -278,32 +289,92 @@ int main(void) {
 
       hw.ClearDisplay();
 
-      hw.PrintBPM(clock.GetBpm(), clock.GetMultChar(), 0, 0);
-      hw.PrintCPU(cpuUsage, 86, 0);
-      hw.PrintShift(1, shift1, 0, 56);
-      hw.PrintShift(2, shift2, 86, 56);
+      // print BPM
+      string bpmStr = "BPM:" + to_string(static_cast<int>(clock.GetBpm())) +
+                      clock.GetMultChar();
+      hw.PrintToScreen(bpmStr.c_str(), 0, row1);
+      // print CPU usage
+      string cpuStr = "CPU:" + to_string(static_cast<int>(cpuUsage)) + "%";
+      hw.PrintToScreen(cpuStr.c_str(), 86, row1);
+      // print shifts
+      if (shift1) {
+        hw.PrintToScreen("Shift 1", 0, 56);
+      }
+      if (shift2) {
+        hw.PrintToScreen("Shift 2", 86, 56);
+      }
 
       // print sequence to screen
       for (size_t i = 0; i < 8; i++) {
-        uint8_t xPos = i * 30 + 6; // + offset to center
-        uint8_t yPos = 15;
+        uint8_t xPos = i * 30 + screenOffset; // + offset to center
+        uint8_t yPos = row2;
         // invert color if step is active
         bool color = !(seq1.IsStepActive(i));
         // values for second row
         if (i > 3) {
           xPos = xPos - (4 * 30);
-          yPos = yPos + 10;
+          yPos = row3;
         }
         // if step is playing use [ ]
-        FixedCapStr<4> noteStr("");
-        (play && seq1.GetCurrentStep() == i) ? noteStr.Append("[")
-                                             : noteStr.Append(" ");
-        noteStr.Append(pitchSeq.StepToName(i));
-        (play && seq1.GetCurrentStep() == i) ? noteStr.Append("]")
-                                             : noteStr.Append(" ");
-        hw.Field().display.SetCursor(xPos, yPos);
-        hw.Field().display.WriteString(noteStr, Font_6x8, color);
+        string noteStr = "";
+        (play && seq1.GetCurrentStep() == i) ? noteStr += "[" : noteStr += " ";
+        noteStr += pitchSeq.StepToName(i);
+        (play && seq1.GetCurrentStep() == i) ? noteStr += "]" : noteStr += " ";
+        hw.PrintToScreen(noteStr.c_str(), xPos, yPos, color);
       }
+
+      // TODO add switch
+      
+      // No switches
+      string pos1Text = "Trns";
+      string pos1Val = to_string(pitchSeq.GetTranspose());
+      string pos2Text = "????";
+      string pos2Val = "";
+      string pos3Text = "????";
+      string pos3Val = "";
+      string pos4Text = "????";
+      string pos4Val = "";
+      string pos5Text = "EnvD";
+      FixedCapStr<8> pos5Val("");
+      pos5Val.AppendFloat(env1.GetDecay());
+      string pos6Text = "Freq";
+      // format filter frequency
+      FixedCapStr<8> pos6Val("");
+      float filtFreq = filter1.GetFreq();
+      if (filtFreq < 100.f) {
+        // eg 50.0
+        pos6Val.AppendFloat(filter1.GetFreq(), 1);
+      } else if (filtFreq < 10000.f) {
+        // eg 250 or 5000
+        pos6Val.AppendInt(static_cast<int>(filter1.GetFreq()));
+      } else {
+        // eg 12k
+        pos6Val.AppendInt(static_cast<int>(filter1.GetFreq() / 1000));
+        pos6Val.Append("k");
+      }
+      string pos7Text = "Q";
+      FixedCapStr<8> pos7Val("");
+      pos7Val.AppendFloat(filter1.GetQ());
+      string pos8Text = "FilD";
+      FixedCapStr<8> pos8Val("");
+      pos8Val.AppendFloat(env2.GetDecay());
+
+      hw.PrintToScreen(pos1Text.c_str(), screenOffset, row4);
+      hw.PrintToScreen(pos1Val.c_str(), screenOffset, row5);
+      hw.PrintToScreen(pos2Text.c_str(), screenOffset + 30 * 1, row4);
+      hw.PrintToScreen(pos2Val.c_str(), screenOffset + 30 * 1, row5);
+      hw.PrintToScreen(pos3Text.c_str(), screenOffset + 30 * 2, row4);
+      hw.PrintToScreen(pos3Val.c_str(), screenOffset + 30 * 2, row5);
+      hw.PrintToScreen(pos4Text.c_str(), screenOffset + 30 * 3, row4);
+      hw.PrintToScreen(pos4Val.c_str(), screenOffset + 30 * 3, row5);
+      hw.PrintToScreen(pos5Text.c_str(), screenOffset, row6);
+      hw.PrintFixedCapStrToScreen(pos5Val, screenOffset, row7);
+      hw.PrintToScreen(pos6Text.c_str(), screenOffset + 30 * 1, row6);
+      hw.PrintFixedCapStrToScreen(pos6Val, screenOffset + 30 * 1, row7);
+      hw.PrintToScreen(pos7Text.c_str(), screenOffset + 30 * 2, row6);
+      hw.PrintFixedCapStrToScreen(pos7Val, screenOffset + 30 * 2, row7);
+      hw.PrintToScreen(pos8Text.c_str(), screenOffset + 30 * 3, row6);
+      hw.PrintFixedCapStrToScreen(pos8Val, screenOffset + 30 * 3, row7);
 
       // FixedCapStr<32> var("");
       // var.AppendFloat(pitchSeq.GetTranspose());
